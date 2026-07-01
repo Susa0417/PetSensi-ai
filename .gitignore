@@ -22,3 +22,6 @@ api-dev.err
 preview.log
 preview.err
 src/backend/PetSenseAI.API/wwwroot/uploads/
+
+.vercel
+.env.local

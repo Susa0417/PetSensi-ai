@@ -79,6 +79,12 @@ The repository includes `vercel.json` so Vercel can deploy the Angular frontend 
 
 Set `PETSENSE_API_URL` in Vercel to the public URL of the hosted .NET API, for example `https://api.yourdomain.com/api`. If it is not set, the frontend uses `/api`.
 
+If the Vercel project root directory is set to `src/frontend`, use the frontend-local config:
+
+- Install command: `npm ci`
+- Build command: `node tools/write-env.mjs && npm run build`
+- Output directory: `dist/petsense-ai-web/browser`
+
 ## Migrations
 
 The project includes an initial EF Core migration:

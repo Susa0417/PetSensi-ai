@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm --prefix src/frontend ci",
-  "buildCommand": "node tools/write-vercel-env.mjs && npm --prefix src/frontend run build",
-  "outputDirectory": "src/frontend/dist/petsense-ai-web/browser",
+  "installCommand": "npm ci",
+  "buildCommand": "node tools/write-env.mjs && npm run build",
+  "outputDirectory": "dist/petsense-ai-web/browser",
   "headers": [
     {
       "source": "/env.js",
