@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm --prefix src/frontend ci",
+  "buildCommand": "node tools/write-vercel-env.mjs && npm --prefix src/frontend run build",
+  "outputDirectory": "src/frontend/dist/petsense-ai-web/browser",
+  "headers": [
+    {
+      "source": "/env.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "^/(?!api/|env\\.js$|favicon\\.svg$|assets/|.*\\..*$).*$",
+      "destination": "/index.html"
+    }
+  ]
+}

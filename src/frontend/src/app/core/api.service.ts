@@ -18,11 +18,25 @@ import {
   WorkflowStatus
 } from './models';
 
+type PetSenseWindow = Window & {
+  __PETSENSE_CONFIG__?: {
+    apiUrl?: string;
+  };
+};
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = this.resolveApiUrl();
   private readonly apiOrigin = this.baseUrl.replace(/\/api\/?$/, '');
+
+  private resolveApiUrl(): string {
+    const runtimeApiUrl = typeof window === 'undefined'
+      ? ''
+      : ((window as PetSenseWindow).__PETSENSE_CONFIG__?.apiUrl ?? '');
+
+    return (runtimeApiUrl.trim() || environment.apiUrl).replace(/\/$/, '');
+  }
 
   list<T>(path: string, search = '', page = 1, pageSize = 50): Observable<PagedResult<T>> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
