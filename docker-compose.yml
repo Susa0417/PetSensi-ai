@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: petsense-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-petsense_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-petsense}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-petsense}
+    ports:
+      - "5432:5432"
+    volumes:
+      - petsense-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-petsense} -d ${POSTGRES_DB:-petsense_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: src/backend/PetSenseAI.API/Dockerfile
+    container_name: petsense-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-petsense_ai};Username=${POSTGRES_USER:-petsense};Password=${POSTGRES_PASSWORD:-petsense}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-CHANGE_ME_TO_A_64_CHARACTER_RANDOM_SECRET_FOR_PRODUCTION_BUILDS}
+      Cors__Origins__0: http://localhost:${FRONTEND_PORT:-4200}
+    ports:
+      - "${API_PORT:-5000}:8080"
+    volumes:
+      - petsense-uploads:/app/wwwroot/uploads
+
+  frontend:
+    build:
+      context: .
+      dockerfile: src/frontend/Dockerfile
+    container_name: petsense-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+
+volumes:
+  petsense-postgres-data:
+  petsense-uploads:

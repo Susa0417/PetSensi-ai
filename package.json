@@ -1,0 +1,12 @@
+{
+  "name": "petsense-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node tools/dev.mjs",
+    "dev:api": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/start-api-dev.ps1",
+    "dev:web": "npm --prefix src/frontend start",
+    "build": "node tools/build.mjs",
+    "build:web": "npm --prefix src/frontend run build"
+  }
+}

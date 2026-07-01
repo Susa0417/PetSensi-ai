@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetSenseAI.Domain", "src\backend\PetSenseAI.Domain\PetSenseAI.Domain.csproj", "{0CE39EF9-8267-4C7E-A924-25869B621D30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetSenseAI.Application", "src\backend\PetSenseAI.Application\PetSenseAI.Application.csproj", "{612A51AC-32A5-41F5-9F1A-2C78FA2E2441}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetSenseAI.Infrastructure", "src\backend\PetSenseAI.Infrastructure\PetSenseAI.Infrastructure.csproj", "{62216520-A252-45B3-B458-057CDB815062}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetSenseAI.API", "src\backend\PetSenseAI.API\PetSenseAI.API.csproj", "{4B651862-A519-4613-B302-166B43042BB0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CE39EF9-8267-4C7E-A924-25869B621D30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CE39EF9-8267-4C7E-A924-25869B621D30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CE39EF9-8267-4C7E-A924-25869B621D30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CE39EF9-8267-4C7E-A924-25869B621D30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{612A51AC-32A5-41F5-9F1A-2C78FA2E2441}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{612A51AC-32A5-41F5-9F1A-2C78FA2E2441}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{612A51AC-32A5-41F5-9F1A-2C78FA2E2441}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{612A51AC-32A5-41F5-9F1A-2C78FA2E2441}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62216520-A252-45B3-B458-057CDB815062}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62216520-A252-45B3-B458-057CDB815062}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62216520-A252-45B3-B458-057CDB815062}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62216520-A252-45B3-B458-057CDB815062}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B651862-A519-4613-B302-166B43042BB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B651862-A519-4613-B302-166B43042BB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B651862-A519-4613-B302-166B43042BB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B651862-A519-4613-B302-166B43042BB0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
