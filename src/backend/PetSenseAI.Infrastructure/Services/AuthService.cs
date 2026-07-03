@@ -17,20 +17,23 @@ public sealed class AuthService(
     public async Task<AuthResponse> RegisterAsync(RegisterCommand command, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = command.Email.Trim().ToLowerInvariant();
-        var exists = await dbContext.Users.AnyAsync(x => x.Email == normalizedEmail, cancellationToken);
+        var exists = await dbContext.Users
+            .IgnoreQueryFilters()
+            .AnyAsync(x => x.Email.ToLower() == normalizedEmail, cancellationToken);
+
         if (exists)
         {
             throw new ApiException("An account with this email already exists.", 409);
         }
 
-        var role = await dbContext.Roles.FirstAsync(x => x.Name == "User", cancellationToken);
+        var role = await EnsureUserRoleAsync(cancellationToken);
         var user = new User
         {
             FirstName = command.FirstName.Trim(),
             LastName = command.LastName.Trim(),
             Email = normalizedEmail,
             PasswordHash = passwordHasher.Hash(command.Password),
-            UserRoles = [new UserRole { RoleId = role.Id }]
+            UserRoles = [new UserRole { Role = role }]
         };
 
         dbContext.Users.Add(user);
@@ -112,5 +115,35 @@ public sealed class AuthService(
 
         var accessToken = jwtTokenService.CreateAccessToken(user.Id, user.Email, roles, expiresAt);
         return new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, roles, accessToken, refreshToken, expiresAt);
+    }
+
+    private async Task<Role> EnsureUserRoleAsync(CancellationToken cancellationToken)
+    {
+        const string roleName = "User";
+        const string roleDescription = "Can manage personal pet care workspace.";
+
+        var role = await dbContext.Roles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Name == roleName, cancellationToken);
+
+        if (role is null)
+        {
+            role = new Role { Name = roleName, Description = roleDescription };
+            dbContext.Roles.Add(role);
+            return role;
+        }
+
+        if (role.IsDeleted)
+        {
+            role.IsDeleted = false;
+            role.DeletedAt = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(role.Description))
+        {
+            role.Description = roleDescription;
+        }
+
+        return role;
     }
 }

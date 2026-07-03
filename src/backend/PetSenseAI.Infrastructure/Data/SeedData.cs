@@ -18,27 +18,12 @@ public static class SeedData
             await dbContext.Database.MigrateAsync(cancellationToken);
         }
 
-        if (!await dbContext.Roles.AnyAsync(cancellationToken))
-        {
-            dbContext.Roles.AddRange(
-                new Role { Name = "Admin", Description = "Can manage users, app content, and website content." },
-                new Role { Name = "User", Description = "Can manage personal pet care workspace." });
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        await EnsureRoleAsync(dbContext, "Admin", "Can manage users, app content, and website content.", cancellationToken);
+        await EnsureRoleAsync(dbContext, "User", "Can manage personal pet care workspace.", cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
-        if (!await dbContext.Users.AnyAsync(x => x.Email == "admin@petsense.ai", cancellationToken))
-        {
-            var adminRole = await dbContext.Roles.FirstAsync(x => x.Name == "Admin", cancellationToken);
-            dbContext.Users.Add(new User
-            {
-                FirstName = "PetSense",
-                LastName = "Admin",
-                Email = "admin@petsense.ai",
-                PasswordHash = passwordHasher.Hash("Admin123!"),
-                UserRoles = [new UserRole { RoleId = adminRole.Id }]
-            });
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        await EnsureAdminUserAsync(dbContext, passwordHasher, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         if (!await dbContext.HeroSections.AnyAsync(cancellationToken))
         {
@@ -346,6 +331,69 @@ public static class SeedData
         UpsertFeature(dbContext, "Daily Progress Monitoring", "View charts and reports showing your pet's health, behavior, nutrition, and wellness progress every day.", "query_stats", 4);
         UpsertFeature(dbContext, "AI Wellness Insights", "Get AI-powered insights and recommendations based on health logs, behavior patterns, nutrition records, and progress reports.", "auto_awesome", 5);
         UpsertFeature(dbContext, "Better Care, Stronger Bond", "Help owners understand their pets better and make smarter care decisions.", "favorite", 6);
+    }
+
+    private static async Task EnsureRoleAsync(PetSenseDbContext dbContext, string name, string description, CancellationToken cancellationToken)
+    {
+        var role = await dbContext.Roles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
+
+        if (role is null)
+        {
+            dbContext.Roles.Add(new Role { Name = name, Description = description });
+            return;
+        }
+
+        if (role.IsDeleted)
+        {
+            role.IsDeleted = false;
+            role.DeletedAt = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(role.Description))
+        {
+            role.Description = description;
+        }
+    }
+
+    private static async Task EnsureAdminUserAsync(PetSenseDbContext dbContext, IPasswordHasher passwordHasher, CancellationToken cancellationToken)
+    {
+        const string adminEmail = "admin@petsense.ai";
+        const string adminPassword = "Admin123!";
+
+        var adminRole = await dbContext.Roles.FirstAsync(x => x.Name == "Admin", cancellationToken);
+        var admin = await dbContext.Users
+            .IgnoreQueryFilters()
+            .Include(x => x.UserRoles)
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == adminEmail, cancellationToken);
+
+        if (admin is null)
+        {
+            dbContext.Users.Add(new User
+            {
+                FirstName = "PetSense",
+                LastName = "Admin",
+                Email = adminEmail,
+                PasswordHash = passwordHasher.Hash(adminPassword),
+                IsActive = true,
+                UserRoles = [new UserRole { RoleId = adminRole.Id }]
+            });
+            return;
+        }
+
+        admin.FirstName = string.IsNullOrWhiteSpace(admin.FirstName) ? "PetSense" : admin.FirstName;
+        admin.LastName = string.IsNullOrWhiteSpace(admin.LastName) ? "Admin" : admin.LastName;
+        admin.Email = adminEmail;
+        admin.PasswordHash = passwordHasher.Hash(adminPassword);
+        admin.IsActive = true;
+        admin.IsDeleted = false;
+        admin.DeletedAt = null;
+
+        if (!admin.UserRoles.Any(x => x.RoleId == adminRole.Id))
+        {
+            admin.UserRoles.Add(new UserRole { UserId = admin.Id, RoleId = adminRole.Id });
+        }
     }
 
     private static async Task UpsertSectionAsync(PetSenseDbContext dbContext, string key, string title, string subtitle, string body, int sortOrder, CancellationToken cancellationToken)

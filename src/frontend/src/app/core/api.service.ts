@@ -34,8 +34,13 @@ export class ApiService {
     const runtimeApiUrl = typeof window === 'undefined'
       ? ''
       : ((window as PetSenseWindow).__PETSENSE_CONFIG__?.apiUrl ?? '');
+    const normalizedRuntimeApiUrl = runtimeApiUrl.trim().replace(/\/$/, '');
 
-    return (runtimeApiUrl.trim() || environment.apiUrl).replace(/\/$/, '');
+    if (!environment.production && normalizedRuntimeApiUrl === '/api') {
+      return environment.apiUrl.replace(/\/$/, '');
+    }
+
+    return (normalizedRuntimeApiUrl || environment.apiUrl).replace(/\/$/, '');
   }
 
   list<T>(path: string, search = '', page = 1, pageSize = 50): Observable<PagedResult<T>> {

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth.service';
@@ -101,6 +102,11 @@ export class LoginComponent {
           <mat-form-field appearance="outline">
             <mat-label>Password</mat-label>
             <input matInput formControlName="password" type="password">
+            @if (form.controls.password.hasError('required')) {
+              <mat-error>Password is required.</mat-error>
+            } @else if (form.controls.password.hasError('minlength') || form.controls.password.hasError('passwordStrength')) {
+              <mat-error>Use 8+ characters with uppercase, lowercase, and a number.</mat-error>
+            }
           </mat-form-field>
           <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading()">Create Account</button>
         </form>
@@ -123,10 +129,10 @@ export class RegisterComponent {
   readonly loading = signal(false);
 
   readonly form = this.fb.nonNullable.group({
-    firstName: ['', Validators.required],
-    lastName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]]
+    firstName: ['', [Validators.required, Validators.maxLength(80)]],
+    lastName: ['', [Validators.required, Validators.maxLength(80)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(180)]],
+    password: ['', [Validators.required, Validators.minLength(8), passwordStrengthValidator]]
   });
 
   submit(): void {
@@ -141,10 +147,36 @@ export class RegisterComponent {
         this.loading.set(false);
         void this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.loading.set(false);
-        this.snackBar.open('Registration failed. Try a stronger password or a different email.', 'Close', { duration: 4500 });
+        this.snackBar.open(getRegistrationErrorMessage(error), 'Close', { duration: 4500 });
       }
     });
   }
+}
+
+function passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+  const password = String(control.value ?? '');
+  if (!password) {
+    return null;
+  }
+
+  return /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password)
+    ? null
+    : { passwordStrength: true };
+}
+
+function getRegistrationErrorMessage(error: HttpErrorResponse): string {
+  if (error.status === 0 || error.status === 404) {
+    return 'Registration service is unavailable. Please try again soon.';
+  }
+
+  const body = error.error as { message?: string; errors?: { errorMessage?: string }[] } | null;
+  const validationErrors = body?.errors?.map((item) => item.errorMessage).filter(Boolean) ?? [];
+
+  if (validationErrors.length > 0) {
+    return validationErrors.join(' ');
+  }
+
+  return body?.message || 'Registration failed. Please check your details and try again.';
 }

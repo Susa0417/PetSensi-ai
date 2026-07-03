@@ -17,6 +17,11 @@ using PetSenseAI.Infrastructure.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+var railwayPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(railwayPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
+}
 
 builder.Host.UseSerilog((context, configuration) =>
 {
@@ -121,6 +126,7 @@ app.UseStaticFiles();
 app.UseCors("Web");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
