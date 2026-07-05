@@ -12,6 +12,7 @@ coverage/
 *.log
 .env
 .dotnet/
+.dotnet-tools/
 .dotnet-install.ps1
 petsense-dev.db
 petsense-dev.db-shm
