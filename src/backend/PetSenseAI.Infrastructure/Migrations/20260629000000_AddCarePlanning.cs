@@ -1,9 +1,13 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using PetSenseAI.Infrastructure.Data;
 
 #nullable disable
 
 namespace PetSenseAI.Infrastructure.Migrations;
 
+[DbContext(typeof(PetSenseDbContext))]
+[Migration("20260629000000_AddCarePlanning")]
 public partial class AddCarePlanning : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
