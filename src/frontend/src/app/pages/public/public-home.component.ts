@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../core/api.service';
-import { WebsiteHome } from '../../core/models';
+import { MediaFile, WebsiteHome } from '../../core/models';
 import { SHARED_IMPORTS } from '../../shared/ui';
 
 interface WorkflowCard {
@@ -266,6 +266,26 @@ const fallbackHome: WebsiteHome = {
         </div>
       </section>
 
+      @if (galleryMedia().length) {
+        <section class="section">
+          <div class="section-heading">
+            <p class="eyebrow">Media Gallery</p>
+            <h2>Fresh uploads from the admin panel.</h2>
+          </div>
+          <div class="grid gallery-grid">
+            @for (item of galleryMedia(); track item.id) {
+              <article class="gallery-card">
+                <img [src]="mediaUrl(item.url)" [alt]="item.altText || item.fileName">
+                <div class="gallery-meta">
+                  <strong>{{ item.fileName }}</strong>
+                  <span>{{ item.category || 'Website media' }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
       <section id="waitlist" class="section waitlist-section">
         <div>
           <p class="eyebrow">Contact</p>
@@ -314,6 +334,7 @@ export class PublicHomeComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   readonly home = signal<WebsiteHome>(fallbackHome);
+  readonly galleryMedia = signal<MediaFile[]>([]);
   readonly submitting = signal(false);
   private readonly workflowRoutes: WorkflowCard[] = [
     {
@@ -361,12 +382,21 @@ export class PublicHomeComponent implements OnInit {
       next: (home) => this.home.set({ ...fallbackHome, ...home }),
       error: () => this.home.set(fallbackHome)
     });
+
+    this.api.activeMedia(6).subscribe({
+      next: (media) => this.galleryMedia.set(media.filter((item) => item.contentType.startsWith('image/'))),
+      error: () => this.galleryMedia.set([])
+    });
   }
 
   heroBackground(): string {
     const image = this.home().hero?.imageUrl || 'assets/petsense-complete-care.png';
-    const normalized = this.api.mediaUrl(image);
+    const normalized = this.mediaUrl(image);
     return `linear-gradient(90deg, rgba(247, 252, 249, 0.9) 0%, rgba(247, 252, 249, 0.58) 34%, rgba(247, 252, 249, 0.08) 68%), url("${normalized}")`;
+  }
+
+  mediaUrl(url: string): string {
+    return this.api.mediaUrl(url);
   }
 
   homepageFeatures() {

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { UntypedFormBuilder, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
@@ -649,53 +649,112 @@ export class AdminTrainingComponent implements OnInit {
   imports: [SHARED_IMPORTS],
   template: `
     <section class="page-surface">
-      <div class="page-heading"><div><p class="eyebrow">Admin</p><h1>Uploaded images and files</h1></div></div>
-      <form class="panel-form media-upload" [formGroup]="form" (ngSubmit)="saveMediaDetails()">
-        <h2>{{ editingMediaId() ? 'Edit media details' : 'Upload media' }}</h2>
-        <mat-form-field appearance="outline"><mat-label>Category</mat-label><input matInput formControlName="category"></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Alt text</mat-label><input matInput formControlName="altText"></mat-form-field>
-        @if (!editingMediaId()) {
-          <label class="upload-drop">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Upload image or document</span>
-            <input type="file" (change)="upload($event)">
-          </label>
-        }
-        @if (editingMediaId()) {
-          <div class="button-row">
-            <button mat-flat-button color="primary" type="submit">Update Details</button>
-            <button mat-stroked-button type="button" (click)="resetMediaForm()">Cancel</button>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>Uploaded Images & Files</h1>
+          <p class="page-subtitle">Manage gallery media and keep the public website in sync without touching code.</p>
+        </div>
+      </div>
+
+      <form class="panel-form media-upload" [formGroup]="form" (ngSubmit)="submitMediaForm()">
+        <div class="panel-heading">
+          <div>
+            <h2>{{ editingMediaId() ? 'Edit media details' : 'Upload media' }}</h2>
+            <p>{{ editingMediaId() ? 'Update the category and alt text for this item.' : 'Drag and drop a JPG, PNG, WEBP, PDF, DOCX, or TXT file up to 5 MB.' }}</p>
+          </div>
+          @if (selectedFileName()) {
+            <span class="status-pill">{{ selectedFileName() }}</span>
+          }
+        </div>
+
+        <div class="upload-zone"
+             [class.drag-over]="isDragging()"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+          <mat-icon>cloud_upload</mat-icon>
+          <div>
+            <strong>{{ selectedFileName() ? 'Selected file ready for upload' : 'Drop your file here or browse' }}</strong>
+            <p>{{ selectedFileName() ? selectedFileName() : 'PNG, JPG, WEBP, PDF, DOCX, TXT • Max 5 MB' }}</p>
+          </div>
+          <input #fileInput type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt" (change)="onFileSelected($event)">
+          <button mat-stroked-button type="button" (click)="triggerFileInput()">Choose file</button>
+        </div>
+
+        @if (previewUrl()) {
+          <div class="upload-preview">
+            <img [src]="previewUrl()" [alt]="selectedFileName() || 'Upload preview'">
           </div>
         }
+
+        <mat-form-field appearance="outline"><mat-label>Category</mat-label><input matInput formControlName="category"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Alt text</mat-label><input matInput formControlName="altText"></mat-form-field>
+
+        <div class="button-row">
+          @if (editingMediaId()) {
+            <button mat-flat-button color="primary" type="submit">Update details</button>
+            <button mat-stroked-button type="button" (click)="resetMediaForm()">Cancel</button>
+          } @else {
+            <button mat-flat-button color="primary" type="submit" [disabled]="uploading() || !selectedFile()">Upload media</button>
+            <button mat-stroked-button type="button" (click)="clearSelection()">Clear</button>
+          }
+        </div>
       </form>
-      <div class="media-grid">
-        @for (file of files(); track file.id) {
-          <article class="media-card">
-            @if (file.contentType.startsWith('image/')) {
-              <img [src]="mediaUrl(file.url)" [alt]="file.altText || file.fileName">
-            } @else {
-              <mat-icon>description</mat-icon>
-            }
-            <strong>{{ file.fileName }}</strong>
-            <span>{{ file.category }}</span>
-            @if (file.contentType.startsWith('image/')) {
-              <button mat-stroked-button type="button" (click)="setAsHero(file)"><mat-icon>wallpaper</mat-icon>Set as hero</button>
-            }
-            <button mat-stroked-button type="button" (click)="editMedia(file)"><mat-icon>edit</mat-icon>Edit</button>
-            <button mat-stroked-button type="button" color="warn" (click)="deleteMedia(file)"><mat-icon>delete</mat-icon>Delete</button>
-          </article>
-        }
-      </div>
+
+      @if (files().length) {
+        <div class="media-grid">
+          @for (file of files(); track file.id) {
+            <article class="media-card">
+              @if (file.contentType.startsWith('image/')) {
+                <img [src]="mediaUrl(file.url)" [alt]="file.altText || file.fileName">
+              } @else {
+                <mat-icon>description</mat-icon>
+              }
+              <div class="media-card-body">
+                <strong>{{ file.fileName }}</strong>
+                <span>{{ file.category || 'Website media' }}</span>
+                <div class="media-meta">
+                  <span>{{ file.contentType || 'application/octet-stream' }}</span>
+                  <span>{{ formatFileSize(file.size) }}</span>
+                  <span>{{ formatDate(file.createdAt) }}</span>
+                </div>
+              </div>
+              <div class="button-row button-row-wrap">
+                @if (file.contentType.startsWith('image/')) {
+                  <button mat-stroked-button type="button" (click)="setAsHero(file)"><mat-icon>wallpaper</mat-icon>Set as hero</button>
+                }
+                <button mat-stroked-button type="button" (click)="editMedia(file)"><mat-icon>edit</mat-icon>Edit</button>
+                <button mat-stroked-button type="button" color="warn" (click)="deleteMedia(file)"><mat-icon>delete</mat-icon>Delete</button>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>perm_media</mat-icon>
+          <h3>No media yet</h3>
+          <p>Uploads will appear here and instantly update the public gallery.</p>
+        </div>
+      }
     </section>
   `
 })
 export class AdminMediaComponent implements OnInit {
+  @ViewChild('fileInput') private readonly fileInput?: ElementRef<HTMLInputElement>;
+
   private readonly api = inject(ApiService);
   private readonly fb = inject(UntypedFormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   readonly files = signal<MediaFile[]>([]);
   readonly editingMediaId = signal<string | null>(null);
+  readonly uploading = signal(false);
+  readonly selectedFile = signal<File | null>(null);
+  readonly selectedFileName = signal('');
+  readonly previewUrl = signal<string | null>(null);
+  readonly isDragging = signal(false);
   private editingMedia = signal<MediaFile | null>(null);
+  private previewObjectUrl: string | null = null;
   readonly form = this.fb.group({ category: ['website'], altText: [''] });
 
   ngOnInit(): void {
@@ -710,10 +769,104 @@ export class AdminMediaComponent implements OnInit {
     return this.api.mediaUrl(url);
   }
 
+  triggerFileInput(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.assignSelectedFile(file);
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.assignSelectedFile(file);
+    }
+  }
+
+  assignSelectedFile(file: File): void {
+    const validation = this.validateSelectedFile(file);
+    if (validation) {
+      this.snackBar.open(validation, 'Close', { duration: 3500 });
+      return;
+    }
+
+    this.selectedFile.set(file);
+    this.selectedFileName.set(file.name);
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+    }
+
+    if (file.type.startsWith('image/')) {
+      this.previewObjectUrl = URL.createObjectURL(file);
+      this.previewUrl.set(this.previewObjectUrl);
+    } else {
+      this.previewObjectUrl = null;
+      this.previewUrl.set(null);
+    }
+  }
+
+  clearSelection(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+
+    this.selectedFile.set(null);
+    this.selectedFileName.set('');
+    this.previewUrl.set(null);
+  }
+
   editMedia(file: MediaFile): void {
     this.editingMediaId.set(file.id);
     this.editingMedia.set(file);
     this.form.patchValue({ category: file.category, altText: file.altText });
+  }
+
+  submitMediaForm(): void {
+    if (this.editingMediaId()) {
+      this.saveMediaDetails();
+      return;
+    }
+
+    const file = this.selectedFile();
+    if (!file) {
+      this.snackBar.open('Choose a file before uploading.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const { category, altText } = this.form.getRawValue() as { category: string; altText: string };
+    this.uploading.set(true);
+    this.api.uploadMedia(file, category, altText, true).subscribe({
+      next: () => {
+        this.uploading.set(false);
+        this.snackBar.open('Media uploaded successfully.', 'Close', { duration: 2500 });
+        this.clearSelection();
+        this.resetMediaForm();
+        this.load();
+      },
+      error: (error) => {
+        this.uploading.set(false);
+        const message = error?.error?.message || 'Media upload failed. Please try again.';
+        this.snackBar.open(message, 'Close', { duration: 4000 });
+      }
+    });
   }
 
   saveMediaDetails(): void {
@@ -723,10 +876,16 @@ export class AdminMediaComponent implements OnInit {
     }
 
     const { category, altText } = this.form.getRawValue() as { category: string; altText: string };
-    this.api.update<MediaFile>('admin/media-files', { ...current, category, altText }).subscribe(() => {
-      this.snackBar.open('Media details updated.', 'Close', { duration: 2500 });
-      this.resetMediaForm();
-      this.load();
+    this.api.update<MediaFile>('admin/media-files', { ...current, category, altText }).subscribe({
+      next: () => {
+        this.snackBar.open('Media details updated.', 'Close', { duration: 2500 });
+        this.resetMediaForm();
+        this.load();
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Unable to update media details.';
+        this.snackBar.open(message, 'Close', { duration: 4000 });
+      }
     });
   }
 
@@ -762,26 +921,57 @@ export class AdminMediaComponent implements OnInit {
   }
 
   deleteMedia(file: MediaFile): void {
-    this.api.delete('admin/media-files', file.id).subscribe(() => {
-      this.snackBar.open('Media file deleted.', 'Close', { duration: 2500 });
-      if (this.editingMediaId() === file.id) {
-        this.resetMediaForm();
-      }
-      this.load();
-    });
-  }
-
-  upload(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) {
+    const confirmed = window.confirm(`Delete "${file.fileName}" from the website gallery?`);
+    if (!confirmed) {
       return;
     }
 
-    const { category, altText } = this.form.getRawValue() as { category: string; altText: string };
-    this.api.uploadMedia(file, category, altText, true).subscribe(() => {
-      this.snackBar.open('Media uploaded.', 'Close', { duration: 2500 });
-      this.resetMediaForm();
-      this.load();
+    this.api.delete('admin/media-files', file.id).subscribe({
+      next: () => {
+        this.snackBar.open('Media file deleted.', 'Close', { duration: 2500 });
+        if (this.editingMediaId() === file.id) {
+          this.resetMediaForm();
+        }
+        this.load();
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Unable to delete media.';
+        this.snackBar.open(message, 'Close', { duration: 4000 });
+      }
     });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes) {
+      return '0 KB';
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+  }
+
+  formatDate(value?: string): string {
+    if (!value) {
+      return 'Unknown date';
+    }
+
+    return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  private validateSelectedFile(file: File): string | null {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const extension = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.doc', '.docx', '.txt'];
+
+    if (file.size > 5 * 1024 * 1024) {
+      return 'File size must be 5 MB or less.';
+    }
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+      return 'Only JPG, PNG, WEBP, PDF, DOCX, or TXT files are supported.';
+    }
+
+    return null;
   }
 }

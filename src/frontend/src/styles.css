@@ -906,8 +906,155 @@ h3 {
 
 .media-card {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  box-shadow: 0 10px 28px rgba(17, 124, 120, 0.06);
+}
+
+.media-card-body {
+  display: grid;
+  gap: 6px;
+}
+
+.media-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e8f8ef;
+  color: var(--teal-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.upload-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border: 1px dashed #85c4b0;
+  border-radius: 14px;
+  background: #f6fffb;
+  cursor: pointer;
+}
+
+.upload-zone.drag-over {
+  border-color: var(--teal);
+  background: #ebfff7;
+}
+
+.upload-zone mat-icon {
+  color: var(--teal);
+}
+
+.upload-zone strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.upload-zone p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.upload-zone input {
+  display: none;
+}
+
+.upload-preview {
+  margin: 12px 0 18px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.upload-preview img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.button-row-wrap {
+  margin-top: 2px;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 32px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  color: var(--teal);
+  font-size: 36px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.gallery-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  box-shadow: 0 12px 32px rgba(17, 124, 120, 0.08);
+}
+
+.gallery-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.gallery-meta {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px 14px;
+}
+
+.gallery-meta span {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .dashboard-card-grid {
@@ -1023,7 +1170,8 @@ h3 {
   .dashboard-card-grid,
   .insight-grid,
   .guide-grid,
-  .media-grid {
+  .media-grid,
+  .gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1104,6 +1252,7 @@ h3 {
   .insight-grid,
   .guide-grid,
   .media-grid,
+  .gallery-grid,
   .calendar-grid,
   .side-nav {
     grid-template-columns: 1fr;

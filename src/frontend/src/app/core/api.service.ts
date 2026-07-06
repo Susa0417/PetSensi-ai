@@ -173,6 +173,12 @@ export class ApiService {
     return this.http.post<MediaFile>(`${this.baseUrl}/${path}`, formData);
   }
 
+  activeMedia(limit = 12): Observable<MediaFile[]> {
+    return this.http.get<MediaFile[]>(`${this.baseUrl}/media-files/active`, {
+      params: new HttpParams().set('take', limit)
+    });
+  }
+
   login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, { email, password });
   }
