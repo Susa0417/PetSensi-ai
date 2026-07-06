@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "npm install && npm run build"
+    "buildCommand": "npm install && node tools/write-env.mjs && npm run build"
   },
   "deploy": {
     "startCommand": "npx angular-http-server --path dist/petsense-ai-web/browser --host 0.0.0.0 --port $PORT"
