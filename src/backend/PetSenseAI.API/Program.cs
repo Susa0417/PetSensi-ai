@@ -16,6 +16,8 @@ using PetSenseAI.Infrastructure.Data;
 using PetSenseAI.Infrastructure.Services;
 using Serilog;
 
+const string frontendCorsPolicy = "FrontendPolicy";
+
 var builder = WebApplication.CreateBuilder(args);
 var railwayPort = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(railwayPort))
@@ -63,8 +65,14 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Web", policy => policy
-        .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4200"])
+    var origins = (builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [])
+        .Append("https://petsensi.app")
+        .Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    options.AddPolicy(frontendCorsPolicy, policy => policy
+        .WithOrigins(origins)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials());
@@ -123,7 +131,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
-app.UseCors("Web");
+app.UseRouting();
+app.UseCors(frontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
